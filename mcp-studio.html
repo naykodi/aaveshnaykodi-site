@@ -391,6 +391,14 @@
                 </div>
               `;
               log(`Model at capacity (Free Tier constraint).`, "error");
+           } else if (rawText.includes("429 RESOURCE_EXHAUSTED") || rawText.includes("prepayment credits are depleted")) {
+              uiContent.innerHTML = `
+                <div class="error-card">
+                  <div class="error-title">SYSTEM OFFLINE (429)</div>
+                  <div class="error-desc">The API allocation for this live demo has been temporarily exhausted. Check back later when the quota resets.</div>
+                </div>
+              `;
+              log(`Billing gateway rejected request (Quota Exhausted).`, "error");
            } else {
               uiContent.innerHTML = `<div class="error-card"><div class="error-title">BACKEND ERROR</div><div class="error-desc">${rawText}</div></div>`;
               log(`Server Error: ${rawText}`, "error");
