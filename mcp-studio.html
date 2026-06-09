@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCP Studio Controller — Aavesh Naykodi</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    /* ── BASE TOKENS ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg:          #13151E;
+      --bg-card:     #1A1D2A;
+      --bg-hover:    #21263A;
+      --text:        #EAE6DF;
+      --text-2:      #9BA4B8;
+      --text-3:      #5C6480;
+      --indigo:      #818CF8;
+      --indigo-deep: #6366F1;
+      --indigo-pale: rgba(129,140,248,.11);
+      --green:       #52B788;
+      --green-pale:  rgba(82,183,136,.15);
+      --blue:        #38BDF8;
+      --border:      rgba(255,255,255,.07);
+      --r:           8px;
+      --r-lg:        14px;
+    }
+    body {
+      background: var(--bg);
+      background-image: radial-gradient(circle, rgba(129,140,248,.04) 1px, transparent 1px);
+      background-size: 30px 30px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      line-height: 1.75;
+    }
+
+    /* ── NAVIGATION & LAYOUT ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 1.1rem 2.5rem;
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(24,25,31,.9); backdrop-filter: blur(20px) saturate(160%);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-brand { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--text); text-decoration: none; }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a { font-size: .78rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--text-2); text-decoration: none; transition: color .18s; }
+    .nav-links a:hover { color: var(--indigo); }
+    
+    .sw { max-width: 1400px; margin: 0 auto; padding: 8rem 2.5rem 6rem; }
+    .section-title { font-family: 'DM Serif Display', serif; font-size: clamp(2.4rem, 4vw, 3rem); font-weight: 400; line-height: 1.08; color: var(--text); margin-bottom: 1rem; }
+    .section-title em { font-style: italic; color: var(--indigo); }
+    .hero-tagline { font-size: 1.1rem; font-weight: 300; color: var(--text-2); max-width: 600px; margin-bottom: 3rem; }
+
+    /* ── DUAL PANE ARCHITECTURE ── */
+    .mcp-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.5rem;
+      align-items: start;
+    }
+    @media (max-width: 968px) {
+      .mcp-layout { grid-template-columns: 1fr; }
+    }
+
+    /* ── CONSUMER UI (LEFT PANE) ── */
+    .consumer-pane { display: flex; flex-direction: column; gap: 1.5rem; }
+    
+    .control-card {
+      background: var(--bg-card); border: 1px solid var(--border); padding: 2rem; border-radius: var(--r-lg);
+    }
+    .input-group { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1.5rem; }
+    .mcp-input {
+      flex: 1; min-width: 200px; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+      padding: .9rem 1.2rem; border-radius: var(--r); font-family: 'DM Sans', sans-serif; font-size: 1rem;
+    }
+    .mcp-input:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 2px var(--indigo-pale); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; padding: .9rem 1.8rem;
+      font-family: 'DM Sans', sans-serif; font-size: .8rem; font-weight: 600; letter-spacing: .08em;
+      text-transform: uppercase; border-radius: var(--r); transition: all .22s ease; cursor: pointer; border: none;
+    }
+    .btn-primary { background: var(--indigo-deep); color: #fff; box-shadow: 0 0 28px rgba(99,102,241,.3); }
+    .btn-primary:hover:not(:disabled) { background: var(--indigo); transform: translateY(-2px); }
+    .btn-primary:disabled { background: var(--bg-hover); color: var(--text-3); box-shadow: none; cursor: not-allowed; }
+
+    .presentation-card {
+      background: var(--bg-card); border: 1px solid var(--border); padding: 2.5rem; border-radius: var(--r-lg);
+      display: none; 
+    }
+    .presentation-card.active { display: block; animation: fadeUp 0.5s ease forwards; }
+    
+    .composer-name { font-family: 'DM Serif Display', serif; font-size: 2.5rem; color: var(--text); margin-bottom: 1.5rem; line-height: 1.1; }
+    
+    /* Lightweight Markdown Styling */
+    .formatted-content h2 { font-size: 1.2rem; color: var(--indigo); margin: 2rem 0 1rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+    .formatted-content h2:first-child { margin-top: 0; }
+    .formatted-content p { color: var(--text-2); margin-bottom: 1.2rem; font-weight: 300; }
+    .formatted-content ul { list-style: none; margin-bottom: 1.5rem; }
+    .formatted-content li { position: relative; padding-left: 1.5rem; color: var(--text-2); margin-bottom: 0.8rem; font-weight: 300; }
+    .formatted-content li::before { content: "→"; position: absolute; left: 0; color: var(--indigo); font-family: 'DM Mono', monospace; font-weight: bold; }
+    .formatted-content strong { color: var(--text); font-weight: 600; }
+
+    /* ── LOADING & ERROR STATES ── */
+    .spinner-container {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 4rem 0; gap: 1.5rem; text-align: center;
+    }
+    .mcp-spinner {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.05);
+      border-top-color: var(--indigo);
+      border-right-color: var(--blue);
+      animation: spin 1s linear infinite, glow 2s ease-in-out infinite;
+    }
+    .spinner-text {
+      font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--indigo);
+      letter-spacing: 0.15em; text-transform: uppercase; animation: pulseText 1.5s infinite;
+    }
+    
+    .error-card {
+      padding: 2rem; border-radius: var(--r); border: 1px solid rgba(239,68,68,.3);
+      background: rgba(239,68,68,.05); text-align: center; margin-top: 1rem;
+    }
+    .error-title { color: #ef4444; font-weight: 600; margin-bottom: 0.5rem; font-family: 'DM Mono', monospace; font-size: 0.85rem; letter-spacing: 0.05em;}
+    .error-desc { color: var(--text-2); font-size: 0.95rem; font-weight: 300;}
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes glow { 0%, 100% { box-shadow: 0 0 10px var(--indigo-pale); } 50% { box-shadow: 0 0 25px rgba(56,189,248,.3); } }
+    @keyframes pulseText { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── INFRASTRUCTURE UI (RIGHT PANE) ── */
+    .mcp-terminal-card {
+      background: #090B10; border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden;
+      display: flex; flex-direction: column; height: 600px; position: sticky; top: 100px;
+    }
+    .terminal-header {
+      background: rgba(255,255,255,.02); border-bottom: 1px solid var(--border);
+      padding: .8rem 1.5rem; display: flex; justify-content: space-between; align-items: center;
+    }
+    .terminal-title-group { display: flex; align-items: center; gap: .8rem; }
+    .pip { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); }
+    .pip.active { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .terminal-title { font-family: 'DM Mono', monospace; font-size: .65rem; color: var(--text-3); letter-spacing: .1em; }
+    .status-tag { font-family: 'DM Mono', monospace; font-size: .6rem; padding: .2rem .5rem; border-radius: 4px; border: 1px solid var(--border); color: var(--text-3); }
+    .status-tag.connected { color: var(--green); border-color: rgba(82,183,136,.3); background: var(--green-pale); }
+
+    #log-output {
+      padding: 1.5rem; font-family: 'DM Mono', monospace; font-size: .75rem; color: var(--text-2);
+      flex: 1; overflow-y: auto; white-space: pre-wrap; line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <div style="position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden" aria-hidden="true">
+    <div style="position:absolute;width:650px;height:650px;top:-200px;left:-150px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.08) 0%,transparent 70%);filter:blur(80px)"></div>
+  </div>
+
+  <nav role="navigation">
+    <a href="/" class="nav-brand">Aavesh Naykodi</a>
+    <ul class="nav-links">
+      <li><a href="/#work">&larr; Back to Portfolio</a></li>
+    </ul>
+  </nav>
+
+  <main id="main">
+    <section class="sw">
+      <h1 class="section-title">MCP <em>Studio</em> Controller</h1>
+      <p class="hero-tagline">A dual-pane view of decoupled AI microservices. The presentation layer on the left; the raw Server-Sent Events stream on the right.</p>
+
+      <div class="mcp-layout">
+        
+        <div class="consumer-pane">
+          <div class="control-card">
+            <h2 style="font-size: 1.1rem; font-weight: 600; color: var(--text);">Composer Discovery Engine</h2>
+            <p style="font-size: 0.9rem; color: var(--text-2); margin-top: 0.5rem; font-weight: 300;">Query the Gemini MCP tool to generate a structured biography and works list.</p>
+            <div class="input-group">
+              <input type="text" id="composer-input" class="mcp-input" value="Ludwig van Beethoven" placeholder="Enter composer name">
+              <button id="run-btn" class="btn btn-primary" disabled>Execute Request</button>
+            </div>
+          </div>
+
+          <div id="presentation-layer" class="presentation-card">
+            <h2 id="ui-composer-name" class="composer-name"></h2>
+            <div id="ui-content" class="formatted-content"></div>
+          </div>
+        </div>
+
+        <div class="mcp-terminal-card">
+          <div class="terminal-header">
+            <div class="terminal-title-group">
+              <div id="status-pip" class="pip"></div>
+              <span class="terminal-title">LIVE EVENT STREAM</span>
+            </div>
+            <span id="connection-status" class="status-tag">System Offline</span>
+          </div>
+          <div id="log-output">Booting infrastructure...</div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // NOTE: Swap this out with your GCP Cloud Run URL once deployed
+    const BACKEND_URL = "http://localhost:8000/sse"; 
+    
+    let eventSource = null;
+    let messageEndpoint = null;
+    let requestId = 1;
+    const pendingRequests = {};
+
+    // UI Elements
+    const logOutput = document.getElementById("log-output");
+    const connectionStatus = document.getElementById("connection-status");
+    const statusPip = document.getElementById("status-pip");
+    const runBtn = document.getElementById("run-btn");
+    const composerInput = document.getElementById("composer-input");
+    
+    // Presentation Elements
+    const presentationLayer = document.getElementById("presentation-layer");
+    const uiComposerName = document.getElementById("ui-composer-name");
+    const uiContent = document.getElementById("ui-content");
+
+    // Terminal Logging Logic
+    function log(message, type = "info") {
+      const timestamp = new Date().toISOString().split("T")[1].slice(0, -1);
+      let color = "var(--text-2)";
+      if (type === "error") color = "#ef4444";
+      if (type === "result") color = "var(--green)";
+      if (type === "server") color = "var(--indigo-2)";
+      
+      const entry = document.createElement("div");
+      entry.style.color = color;
+      entry.style.marginBottom = "0.5rem";
+      entry.textContent = `[${timestamp}] [${type.toUpperCase()}] ${message}`;
+      
+      logOutput.appendChild(entry);
+      logOutput.scrollTop = logOutput.scrollHeight;
+    }
+
+    // A lightweight parser to convert Gemini's Markdown into clean HTML
+    function parseToHTML(text) {
+      let html = text;
+      html = html.replace(/^##\s+(.*$)/gim, '<h2>$1</h2>');
+      html = html.replace(/^###\s+(.*$)/gim, '<h2>$1</h2>'); 
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/^\s*[\*\-]\s+(.*$)/gim, '<li>$1</li>');
+      html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+      html = html.split('\n\n').map(p => {
+        if (!p.trim().startsWith('<h') && !p.trim().startsWith('<ul')) {
+          return `<p>${p}</p>`;
+        }
+        return p;
+      }).join('');
+      
+      return html;
+    }
+
+    // Protocol Infrastructure Logic
+    function initializeMcpStream() {
+      logOutput.innerHTML = "";
+      log("Opening persistent SSE connection to backend...", "system");
+      eventSource = new EventSource(BACKEND_URL);
+
+      eventSource.addEventListener("endpoint", (event) => {
+        const relativePath = event.data;
+        const urlObj = new URL(BACKEND_URL);
+        messageEndpoint = `${urlObj.origin}${relativePath}`;
+        
+        connectionStatus.textContent = "Protocol Active";
+        connectionStatus.className = "status-tag connected";
+        statusPip.classList.add("active");
+        log(`Pipeline secure. Messages routing to: ${messageEndpoint}`, "mcp");
+        
+        sendMcpHandshake();
+      });
+
+      eventSource.addEventListener("message", (event) => {
+        if (event.data.includes("ping")) return;
+        try {
+          const parsed = JSON.parse(event.data);
+          if (parsed.id && pendingRequests[parsed.id]) {
+            pendingRequests[parsed.id](parsed);
+            delete pendingRequests[parsed.id]; 
+          }
+        } catch(e) {}
+      });
+
+      eventSource.onerror = (err) => {
+        log("Connection refused. Verify backend is running.", "error");
+        connectionStatus.textContent = "Connection Failed";
+        connectionStatus.className = "status-tag";
+        statusPip.classList.remove("active");
+        runBtn.disabled = true;
+        eventSource.close();
+      };
+    }
+
+    async function sendMcpMessage(method, params = null, isNotification = false) {
+      const payload = { jsonrpc: "2.0", method: method };
+      let id = null; let responsePromise = null;
+      
+      if (!isNotification) {
+        id = requestId++; payload.id = id;
+        responsePromise = new Promise((resolve) => { pendingRequests[id] = resolve; });
+      }
+      if (params) payload.params = params;
+
+      try {
+        const response = await fetch(messageEndpoint, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (isNotification) return;
+        return await responsePromise;
+      } catch (err) {
+        log(`Execution failed: ${err.message}`, "error");
+      }
+    }
+
+    async function sendMcpHandshake() {
+      log("Initiating JSON-RPC handshake...", "client");
+      const data = await sendMcpMessage("initialize", {
+        protocolVersion: "2024-11-05", capabilities: {},
+        clientInfo: { name: "web-portfolio-client", version: "1.0.0" }
+      });
+      if (data && data.result) {
+        log("Handshake verified by server.", "server");
+        await sendMcpMessage("notifications/initialized", null, true);
+        await discoverTools();
+      }
+    }
+
+    async function discoverTools() {
+      log("Discovering active tools...", "client");
+      const data = await sendMcpMessage("tools/list");
+      if (data && data.result && data.result.tools) {
+        const toolNames = data.result.tools.map(t => t.name);
+        log(`Tools mounted: ${JSON.stringify(toolNames)}`, "server");
+        runBtn.disabled = false;
+        runBtn.textContent = "Execute Request";
+        log("System idle and ready for execution.", "system");
+      }
+    }
+
+    async function executeComposerLookup() {
+      const targetComposer = composerInput.value.trim();
+      if (!targetComposer) return;
+
+      // Lock UI & Inject Spinner
+      runBtn.disabled = true;
+      runBtn.textContent = "Processing...";
+      uiComposerName.textContent = targetComposer;
+      uiContent.innerHTML = `
+        <div class="spinner-container">
+          <div class="mcp-spinner"></div>
+          <div class="spinner-text">Querying Gemini via MCP...</div>
+        </div>
+      `;
+      presentationLayer.classList.add("active");
+      
+      // Log to Terminal
+      log(`-------------------------------------------`, "client");
+      log(`Invoking tool 'lookup_composer' with arguments: { name: "${targetComposer}" }`, "client");
+
+      // Fire payload
+      const data = await sendMcpMessage("tools/call", {
+        name: "lookup_composer",
+        arguments: { name: targetComposer }
+      });
+      
+      // Handle Response
+      if (data && data.result && data.result.content && data.result.content[0]) {
+        const rawText = data.result.content[0].text;
+        
+        // Intercept Python API Exceptions
+        if (rawText.startsWith("Error retrieving data from Gemini:")) {
+           if (rawText.includes("503 UNAVAILABLE") || rawText.includes("high demand")) {
+              uiContent.innerHTML = `
+                <div class="error-card">
+                  <div class="error-title">API CAPACITY REACHED (503)</div>
+                  <div class="error-desc">I am running this live architecture demo on Google's Free Tier. The Gemini models are currently experiencing a temporary traffic spike. Please wait a few moments and try again!</div>
+                </div>
+              `;
+              log(`Model at capacity (Free Tier constraint).`, "error");
+           } else {
+              uiContent.innerHTML = `<div class="error-card"><div class="error-title">BACKEND ERROR</div><div class="error-desc">${rawText}</div></div>`;
+              log(`Server Error: ${rawText}`, "error");
+           }
+        } else {
+            // Successful Generation
+            log(`Payload received successfully. length=${rawText.length} bytes`, "result");
+            log(`Raw output formatted and pushed to UI.`, "server");
+            uiContent.innerHTML = parseToHTML(rawText);
+        }
+
+      } else if (data && data.error) {
+        uiContent.innerHTML = `<div class="error-card"><div class="error-title">PROTOCOL ERROR</div><div class="error-desc">${data.error.message}</div></div>`;
+        log(`Protocol Error: ${data.error.message}`, "error");
+      }
+      
+      // Unlock UI
+      runBtn.disabled = false;
+      runBtn.textContent = "Execute Request";
+    }
+
+    // Bind events
+    runBtn.addEventListener("click", executeComposerLookup);
+    window.addEventListener("DOMContentLoaded", initializeMcpStream);
+  </script>
+</body>
+</html>
