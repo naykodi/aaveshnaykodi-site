@@ -207,7 +207,9 @@
 
   <script>
     // NOTE: Swap this out with your GCP Cloud Run URL once deployed
-    const BACKEND_URL = "http://localhost:8000/sse"; 
+    const BACKEND_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+  ? "http://localhost:8000/sse"
+  : "https://mcp-music-backend-167360927304.us-west1.run.app/sse";
     
     let eventSource = null;
     let messageEndpoint = null;
